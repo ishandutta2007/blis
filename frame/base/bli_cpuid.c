@@ -861,12 +861,18 @@ uint32_t bli_cpuid_query
 		else
 		{
 			// If the hardware does not support xsave/xrestor/xsetbv/xgetbv,
-			// OR these features are not enabled by the OS, then we clear
-			// the bitfield, because it means that not even xmm support is
-			// present.
+			// OR these features are not enabled by the OS, then the OS
+			// cannot manage the ymm (AVX) or zmm (AVX-512) register state.
+			// SSE-family features use the legacy xmm state (saved via FXSAVE,
+			// which does not depend on xsave/xgetbv), so we keep only those:
+			// a processor may support additional SSE instruction sets without
+			// exposing xgetbv/osxsave, and CPUID can still be trusted for them.
 
 			//fprintf(stderr, "xgetbv: no\n");
-			features = 0;
+			*features &= ( FEATURE_SSE3  |
+			               FEATURE_SSSE3 |
+			               FEATURE_SSE41 |
+			               FEATURE_SSE42 );
 		}
 	}
 
